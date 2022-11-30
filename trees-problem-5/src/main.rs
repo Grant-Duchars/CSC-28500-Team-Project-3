@@ -1,4 +1,4 @@
-#[derive(Debug)]
+// Author: Grant Duchars
 struct Node {
     letter: Option<char>,
     frequency: f64,
@@ -6,7 +6,24 @@ struct Node {
     right: Option<Box<Node>>,
 }
 
-fn main() -> Result<(), std::io::Error> {
+impl Node {
+    fn new(letter: char, frequency: f64) -> Self {
+        Node {
+            letter: Some(letter),
+            frequency,
+            left: None,
+            right: None,
+        }
+    }
+}
+
+impl From<Node> for Option<Box<Node>> {
+    fn from(node: Node) -> Self {
+        Some(Box::new(node))
+    }
+}
+
+fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Make a vector to store letters and thier frequencies
     let mut letters: Vec<Node> = Vec::new();
     // Loop to prompt user to input a letter followed by its frequency
@@ -33,7 +50,7 @@ fn main() -> Result<(), std::io::Error> {
             }
         });
     }
-    // Sort the letters by ascending frequency
+    // Sort the letters by decsending frequency
     letters.sort_unstable_by(
         |Node {
              letter: _,
@@ -48,14 +65,11 @@ fn main() -> Result<(), std::io::Error> {
              right: _,
          }| b.partial_cmp(a).expect("Error while sorting"),
     );
-    // println!("{letters:?}");
+    // Build the huffman code tree and store the root
     let root = build_huffman_code_tree(letters).unwrap();
-    // let height = get_height(&root);
-    // println!("{height}");
-    print_huffman_code(
-        &root,
-        std::cmp::max(9, get_height(&root).try_into().unwrap()),
-    );
+    // Print out the huffman code tree
+    print_huffman_code(&root, std::cmp::max(9, get_height(&root).try_into()?));
+    // Quit the program
     Ok(())
 }
 
@@ -66,8 +80,8 @@ fn build_huffman_code_tree(mut letters: Vec<Node>) -> Option<Node> {
         let new_node = Node {
             letter: None,
             frequency: node_a.frequency + node_b.frequency,
-            left: Some(Box::from(node_a)),
-            right: Some(Box::from(node_b)),
+            left: node_a.into(),
+            right: node_b.into(),
         };
         let mut index = letters.len();
         for node in letters.iter().rev() {
@@ -92,11 +106,11 @@ fn print_huffman_code(root: &Node, width: usize) {
 
 fn print_huffman_code_helper(node: &Node, code: String, width: usize) {
     match &node.left {
-        Some(left_node) => print_huffman_code_helper(&*left_node, code.clone() + "0", width),
+        Some(left_node) => print_huffman_code_helper(left_node, code.clone() + "0", width),
         None => (),
     }
     match &node.right {
-        Some(right_node) => print_huffman_code_helper(&*right_node, code.clone() + "1", width),
+        Some(right_node) => print_huffman_code_helper(right_node, code.clone() + "1", width),
         None => (),
     }
     match &node.letter {
@@ -108,12 +122,12 @@ fn print_huffman_code_helper(node: &Node, code: String, width: usize) {
 fn get_height(node: &Node) -> i32 {
     let mut max_child_height = -1;
     match &node.left {
-        Some(left_node) => max_child_height = get_height(&*left_node),
+        Some(left_node) => max_child_height = get_height(left_node),
         None => (),
     }
     match &node.right {
         Some(right_node) => {
-            max_child_height = std::cmp::max(max_child_height, get_height(&*right_node));
+            max_child_height = std::cmp::max(max_child_height, get_height(right_node));
         }
         None => (),
     }
@@ -132,15 +146,15 @@ fn prompt_input(prompt: &str) -> Result<String, std::io::Error> {
 
 /// Function to take in user input and try to parse it into a tuple of a char and a float
 fn parse_input(mut input: core::str::Split<&str>) -> Option<Node> {
-    Some(Node {
-        letter: match input.next() {
+    Some(Node::new(
+        match input.next() {
             Some(s) => match s.chars().next() {
-                Some(c) => Some(c),
+                Some(c) => c,
                 None => return None,
             },
             None => return None,
         },
-        frequency: match input.next() {
+        match input.next() {
             Some(s) => match s.parse::<f64>() {
                 Ok(f) => f,
                 Err(_) => {
@@ -150,9 +164,7 @@ fn parse_input(mut input: core::str::Split<&str>) -> Option<Node> {
             },
             None => return None,
         },
-        left: None,
-        right: None,
-    })
+    ))
 }
 
 fn premade_letters() -> Vec<Node> {
@@ -167,12 +179,7 @@ fn premade_letters() -> Vec<Node> {
     ];
     let mut letters: Vec<Node> = Vec::new();
     for i in 0..26 {
-        letters.push(Node {
-            letter: Some(characters[i]),
-            frequency: frequencies[i],
-            left: None,
-            right: None,
-        })
+        letters.push(Node::new(characters[i], frequencies[i]))
     }
     letters
 }
