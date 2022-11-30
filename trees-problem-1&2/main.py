@@ -1,7 +1,7 @@
 '''
 Morgan Purcell
 November 30th, 2022
-A program to construct a binary tree and store characters in lexiographic order
+A program to construct a binary tree and store ASCII symbols in lexiographic order
 '''
 
 #define the Treenode class
